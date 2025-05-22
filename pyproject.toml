@@ -10,8 +10,8 @@ license = "MIT"
 keywords = ['logic', 'semantics', 'proof', 'philosophy']
 
 [project.urls]
-homepage = "https://ozekik.github.io/mathesis/"
-repository = "https://github.com/ozekik/mathesis"
+homepage = "https://digitalformallogic.github.io/mathesis/"
+repository = "https://github.com/digitalformallogic/mathesis"
 
 [tool.poetry.dependencies]
 python = "^3.9"

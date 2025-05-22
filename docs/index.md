@@ -5,16 +5,16 @@ title: "Mathesis: Formal Logic Library in Python"
 # Mathesis: Formal Logic Library in Python
 
 [![PyPI](https://img.shields.io/pypi/v/mathesis.svg)](https://pypi.org/project/mathesis/)
-[![Documentation Status](https://img.shields.io/github/actions/workflow/status/ozekik/mathesis/pages/pages-build-deployment?branch=gh-pages&label=docs)](https://ozekik.github.io/mathesis/)
+[![Documentation Status](https://img.shields.io/github/actions/workflow/status/digitalformallogic/mathesis/pages/pages-build-deployment?branch=gh-pages&label=docs)](https://digitalformallogic.github.io/mathesis/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/mathesis.svg)](https://pypistats.org/packages/mathesis)
 
-[Mathesis](//github.com/ozekik/mathesis) is a human-friendly Python library for computational formal logic (including mathematical, symbolic, philosophical logic), formal semantics, and theorem proving.
+[Mathesis](//github.com/digitalformallogic/mathesis) is a human-friendly Python library for computational formal logic (including mathematical, symbolic, philosophical logic), formal semantics, and theorem proving.
 It is particularly well-suited for:
 
 - Students learning logic and educators teaching it
 - Researchers in fields like logic, philosophy, linguistics, computer science, and many others
 
-**Documentation:** <https://ozekik.github.io/mathesis/>
+**Documentation:** <https://digitalformallogic.github.io/mathesis/>
 
 ## Installation
 

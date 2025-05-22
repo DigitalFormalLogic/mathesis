@@ -1,7 +1,7 @@
 site_name: "Mathesis"
 site_description: Python library for formal logic (mathematical logic, philosophical logic), formal semantics, and theorem proving
 # strict: true
-site_url: https://ozekik.github.io/mathesis/
+site_url: https://digitalformallogic.github.io/mathesis/
 
 theme:
   name: "material"
@@ -37,8 +37,8 @@ theme:
     repo: fontawesome/brands/github
   # favicon: "favicon.png"
 
-repo_name: ozekik/mathesis
-repo_url: https://github.com/ozekik/mathesis
+repo_name: digitalformallogic/mathesis
+repo_url: https://github.com/digitalformallogic/mathesis
 edit_uri: edit/master/docs/
 # extra:
 #   version:
