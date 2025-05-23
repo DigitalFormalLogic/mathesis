@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 from copy import copy, deepcopy
 
@@ -11,20 +12,22 @@ class Formula:
     def transform(self, transformer):
         return transformer(self)
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Formula):
+            return NotImplemented
+
+        elif not isinstance(other, type(self)):  # not the same (main) connective
+            return False
+
+        return str(self) == str(other)
+
 
 class Atom(Formula):
     _latex: str | None
 
-    def __init__(self, constant_or_nonzero: str | list, symbol=None, latex=None):
-        if isinstance(constant_or_nonzero, list):
-            self.predicate, self.terms = (
-                str(constant_or_nonzero[0]),
-                tuple(map(str, constant_or_nonzero[1:])),
-            )
-        else:
-            constant = constant_or_nonzero
-            self.predicate = str(constant)
-            self.terms = []
+    def __init__(self, predicate: str, terms: list[str]=[], latex: Optional[str]=None):
+        self.predicate = predicate
+        self.terms = terms
         self._latex = latex
 
     @property
@@ -62,6 +65,53 @@ class Atom(Formula):
 
     def __repr__(self) -> str:
         return f"Atom[{self.symbol}]"
+
+
+class Constant(Atom):
+    """Base class for Top and Bottom"""
+
+    signature: str
+    connective: str
+    connective_latex: str
+
+    def __init__(self):
+        pass
+
+    @property
+    def symbol(self) -> str:
+        return self.connective
+
+    @property
+    def atoms(self):
+        return {}
+
+    @property
+    def free_terms(self):
+        return []
+
+    def replace_term(self, replaced_term, replacing_term):
+        return self
+
+    def latex(self) -> str:
+        return self.connective_latex
+
+    def __str__(self) -> str:
+        return self.symbol
+
+    def __repr__(self) -> str:
+        return self.signature
+
+
+class Top(Constant):
+    signature = "Top"
+    connective = "⊤"
+    connective_latex = r"\top"
+
+
+class Bottom(Constant):
+    signature = "Bottom"
+    connective = "⊥"
+    connective_latex = r"\bot"
 
 
 class Unary(Formula):
@@ -111,8 +161,8 @@ class Negation(Unary):
 class Binary(Formula):
     subs: tuple[Formula, Formula]
 
-    def __init__(self):
-        pass
+    def __init__(self, sub1: Formula, sub2: Formula):
+        self.subs = (sub1, sub2)
 
     def clone(self):
         clones = [sub.clone() for sub in self.subs]
@@ -173,26 +223,17 @@ class Conjunction(Binary):
     connective = "∧"
     connective_latex = r"\land"
 
-    def __init__(self, sub1: Formula, sub2: Formula):
-        self.subs = (sub1, sub2)
-
 
 class Disjunction(Binary):
     signature = "Disj"
     connective = "∨"
     connective_latex = r"\lor"
 
-    def __init__(self, sub1: Formula, sub2: Formula):
-        self.subs = (sub1, sub2)
-
 
 class Conditional(Binary):
     signature = "Cond"
     connective = "→"
     connective_latex = r"\to"
-
-    def __init__(self, sub1: Formula, sub2: Formula):
-        self.subs = (sub1, sub2)
 
 
 class Quantifier(Formula):

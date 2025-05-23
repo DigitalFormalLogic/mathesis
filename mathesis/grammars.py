@@ -6,6 +6,8 @@ from lark import Lark, Transformer
 
 from mathesis.forms import (
     Atom,
+    Top,
+    Bottom,
     Conditional,
     Conjunction,
     Disjunction,
@@ -14,18 +16,19 @@ from mathesis.forms import (
     Universal,
 )
 
-_latex_symbols = {
-    "⊥": r"\bot",
-    "⊤": r"\top",
-}
-
 
 class ToFml(Transformer):
     def atom(self, v):
-        if len(v) == 1:
-            return Atom(*v, latex=_latex_symbols.get(v[0], None))
+        if len(v) == 1:  # only a predicate (proposition)
+            return Atom(v[0])
         else:
-            return Atom(v)
+            return Atom(v[0], terms=v[1:])
+
+    def top(self, v):
+        return Top()
+
+    def bottom(self, v):
+        return Bottom()
 
     def negation(self, v):
         return Negation(*v)
@@ -88,25 +91,26 @@ class BasicPropositionalGrammar(Grammar):
     """Basic grammar for the propositional language."""
 
     grammar_rules = r"""
-?fml: conjunction
+?fml: conditional
     | disjunction
-    | conditional
+    | conjunction
     | negation
+    | top
+    | bottom
     | atom
-    | _subfml
+    | "(" fml ")"
 
-ATOM : /\w+/ | "⊤" | "⊥"
+ATOM : /\w+/
 
 atom : ATOM
-negation : "¬" _subfml
-conjunction : (conjunction | _subfml) "∧" _subfml
-disjunction : (disjunction | _subfml) "∨" _subfml
-conditional : _subfml "{conditional_symbol}" _subfml
-necc : "□" _subfml
-poss : "◇" _subfml
-
-_unary : negation | necc | poss
-_subfml : "(" fml ")" | _unary | atom
+top : "⊤"
+bottom : "⊥"
+negation : "¬" fml
+conjunction : (conjunction | fml) "∧" fml
+disjunction : (disjunction | fml) "∨" fml
+conditional : fml "{conditional_symbol}" fml
+necc : "□" fml
+poss : "◇" fml
 
 %import common.WS
 %ignore WS
@@ -123,30 +127,31 @@ class BasicGrammar(BasicPropositionalGrammar):
     """Basic grammar for the first-order language."""
 
     grammar_rules = r"""
-?fml: conjunction
+?fml: conditional
     | disjunction
-    | conditional
+    | conjunction
     | negation
     | universal
     | particular
+    | top
+    | bottom
     | atom
-    | _subfml
+    | "(" fml ")"
 
-PREDICATE: /\w+/ | "⊤" | "⊥"
+PREDICATE: /\w+/
 TERM: /\w+/
 
 atom : PREDICATE ("(" TERM ("," TERM)* ")")?
-negation : "¬" _subfml
-conjunction : (conjunction | _subfml) "∧" _subfml
-disjunction : (disjunction | _subfml) "∨" _subfml
-conditional : _subfml "{conditional_symbol}" _subfml
-necc : "□" _subfml
-poss : "◇" _subfml
-universal : "∀" TERM _subfml
-particular : "∃" TERM _subfml
-
-_unary : negation | necc | poss | universal | particular
-_subfml : "(" fml ")" | _unary | atom
+top : "⊤"
+bottom : "⊥"
+negation : "¬" fml
+conjunction : fml "∧" fml
+disjunction : fml "∨" fml
+conditional : fml "{conditional_symbol}" fml
+necc : "□" fml
+poss : "◇" fml
+universal : "∀" TERM fml
+particular : "∃" TERM fml
 
 %import common.WS
 %ignore WS

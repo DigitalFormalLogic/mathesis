@@ -48,8 +48,6 @@ class Model:
         self.constants = constants
         self.functions = functions
 
-        # TODO: Support top and bottom
-
     # def assign_term_denotation(self, term):
     #     if term in self.variables:
     #         pass
@@ -64,7 +62,13 @@ class Model:
             fml: A formula.
             variable_assignment: A dictionary with variable symbols as keys and assigned objects as values
         """
-        if isinstance(fml, forms.Atom):
+        if isinstance(fml, forms.Top):
+            return 1
+
+        elif isinstance(fml, forms.Bottom):
+            return 0
+
+        elif isinstance(fml, forms.Atom):
             # Denotations of the terms, a list to be converted to a tuple
             term_denotations = []
 
