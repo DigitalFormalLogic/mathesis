@@ -15,9 +15,8 @@ class ModusPonens(Rule):
         assert isinstance(target.fml, forms.Conditional), "Not a conditional"
         antec, conseq = target.fml.subs
 
-        # TODO: Better way to check conditions
         antec = next(
-            filter(lambda x: str(x.fml) == str(antec), target.sequent.left),
+            filter(lambda x: x.fml == antec, target.sequent.left),
             None,
         )
         assert antec, "Antecendent does not match"

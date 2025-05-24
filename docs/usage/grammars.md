@@ -7,6 +7,8 @@ Formulas are parsed from strings using grammars (languages, syntax).
 `mathesis.grammars.BasicGrammar` is a basic grammar with a standard set of symbols for propositional and quantified logic:
 
 - `¬` for negation, `∧` for conjunction, `∨` for disjunction, `→` for conditional.
+- `⊤` for top (True) and `⊥` for bottom (False).
+- `∀` for universal quantifier and `∃` for existential quantifier.
 - Arbitrary symbols are allowed for atomic formulas.
 
 For example, `¬(A→C)` is parsed as a negation of a conditional of two atomic formulas `A` and `C`.
@@ -72,26 +74,29 @@ from mathesis.grammars import Grammar
 
 class MyGrammar(Grammar):
     grammar_rules = r"""
-?fml: conjunction
+?fml: conditional
     | disjunction
-    | conditional
+    | conjunction
     | negation
     | universal
     | particular
+    | top
+    | bottom
     | atom
-    | _subfml
+    | "(" fml ")"
 
-PREDICATE: /\w+/ | "⊤" | "⊥"
+PREDICATE: /\w+/
 TERM: /\w+/
 
 atom : PREDICATE ("(" TERM ("," TERM)* ")")?
-negation : "¬" _subfml
-conjunction : (conjunction | _subfml) "∧" _subfml
-disjunction : (disjunction | _subfml) "∨" _subfml
-conditional : _subfml "→" _subfml
-
-_unary : negation | necc | poss | universal | particular
-_subfml : "(" fml ")" | _unary | atom
+top : "⊤"
+bottom : "⊥"
+negation : "¬" fml
+conjunction : fml "∧" fml
+disjunction : fml "∨" fml
+conditional : fml "→" fml
+universal : "∀" TERM fml
+particular : "∃" TERM fml
 
 %import common.WS
 %ignore WS

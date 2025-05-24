@@ -226,7 +226,11 @@ class TruthTable:
         # formula_row_segments.append(nonatom_value_pairs)
 
     def compute_truth_value(self, assigned_node):
-        if isinstance(assigned_node.fml, forms.Atom):
+        if isinstance(assigned_node.fml, forms.Top):
+            assigned_node.truth_value = 1
+        elif isinstance(assigned_node.fml, forms.Bottom):
+            assigned_node.truth_value = 0
+        elif isinstance(assigned_node.fml, forms.Atom):
             # assigned_node.truth_value = assigned_node._truth_value
             pass
         elif isinstance(assigned_node.fml, forms.Negation):
