@@ -46,7 +46,7 @@ class Atom(Formula):
         return self.terms
 
     def replace_term(self, replaced_term, replacing_term):
-        fml = self
+        fml = self.clone()
         fml.terms = [
             replacing_term if term == replaced_term else term for term in self.terms
         ]
@@ -132,7 +132,7 @@ class Unary(Formula):
         return self.sub.free_terms
 
     def replace_term(self, replaced_term, replacing_term):
-        fml = self
+        fml = self.clone()
         fml.sub = self.sub.replace_term(replaced_term, replacing_term)
         return fml
 
@@ -187,9 +187,9 @@ class Binary(Formula):
 
     def replace_term(self, replaced_term, replacing_term):
         # fml = copy(self)
-        fml = self
+        fml = self.clone()
         subs = []
-        for subfml in self.subs:
+        for subfml in deepcopy(self.subs):
             subs.append(subfml.replace_term(replaced_term, replacing_term))
         fml.subs = subs
         return fml
