@@ -95,7 +95,7 @@ pip install mathesis
 
 ## Roadmap
 
-- [ ] Add tests
+- [ ] Add tests (WIP)
 - [ ] Hilbert systems
 - [x] Natural deduction
 - [ ] Boolean algebra
