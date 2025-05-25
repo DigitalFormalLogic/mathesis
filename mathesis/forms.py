@@ -205,7 +205,7 @@ class Binary(Formula):
     def __str__(self) -> str:
         # print(self.subs)
         # return f"{self.connective}".join(map(lambda x: f"({x})", self.subs))
-        return f"{self.connective}".join(
+        return f" {self.connective} ".join(
             map(
                 lambda x: f"({x})" if isinstance(x, Binary) else f"{x}",
                 self.subs,
