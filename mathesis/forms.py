@@ -1,16 +1,39 @@
 from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from copy import copy, deepcopy
 from typing import Optional
 
-from copy import copy, deepcopy
 
+class Formula(ABC):
+    @property
+    @abstractmethod
+    def atoms(self) -> dict:
+        raise NotImplementedError
 
-class Formula:
     @property
     def atom_symbols(self):
         return list(self.atoms.keys())
 
+    @property
+    @abstractmethod
+    def free_terms(self) -> list[str]:
+        raise NotImplementedError
+
     def transform(self, transformer):
         return transformer(self)
+
+    @abstractmethod
+    def clone(self) -> Formula:
+        raise NotImplementedError
+
+    @abstractmethod
+    def replace_term(self, replaced_term, replacing_term) -> Formula:
+        raise NotImplementedError
+
+    @abstractmethod
+    def latex(self) -> str:
+        raise NotImplementedError
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, Formula):
@@ -25,7 +48,9 @@ class Formula:
 class Atom(Formula):
     _latex: str | None
 
-    def __init__(self, predicate: str, terms: list[str]=[], latex: Optional[str]=None):
+    def __init__(
+        self, predicate: str, terms: list[str] = [], latex: Optional[str] = None
+    ):
         self.predicate = predicate
         self.terms = terms
         self._latex = latex
@@ -115,6 +140,11 @@ class Bottom(Constant):
 
 
 class Unary(Formula):
+    sub: Formula
+    signature: str
+    connective: str
+    connective_latex: str | None
+
     def __init__(self, sub: Formula):
         self.sub = sub
 
@@ -160,6 +190,9 @@ class Negation(Unary):
 
 class Binary(Formula):
     subs: tuple[Formula, Formula]
+    signature: str
+    connective: str
+    connective_latex: str | None
 
     def __init__(self, sub1: Formula, sub2: Formula):
         self.subs = (sub1, sub2)
@@ -237,6 +270,10 @@ class Conditional(Binary):
 
 
 class Quantifier(Formula):
+    signature: str
+    connective: str
+    connective_latex: str | None
+
     def __init__(self, term, sub: Formula):
         self.variable = term
         self.sub = sub
