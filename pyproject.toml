@@ -14,7 +14,7 @@ homepage = "https://digitalformallogic.github.io/mathesis/"
 repository = "https://github.com/digitalformallogic/mathesis"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 lark = "^1.1.2"
 anytree = "^2.8.0"
 prettytable = "^3.3.0"
