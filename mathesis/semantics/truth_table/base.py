@@ -4,7 +4,7 @@ import logging
 from itertools import product
 
 from anytree import NodeMixin, PostOrderIter
-from prettytable import PLAIN_COLUMNS, PrettyTable
+from prettytable import TableStyle, PrettyTable
 
 from mathesis import forms
 
@@ -47,7 +47,7 @@ class ConnectiveClause:
 
         return table
 
-    def to_string(self, style=PLAIN_COLUMNS):
+    def to_string(self, style=TableStyle.PLAIN_COLUMNS):
         table = self.to_table()
         table.set_style(style)
         return str(table)
@@ -405,7 +405,7 @@ class TruthTable:
 
         return table
 
-    def to_string(self, style=PLAIN_COLUMNS):
+    def to_string(self, style=TableStyle.PLAIN_COLUMNS):
         table = self.to_table()
         table.set_style(style)
         return str(table)
