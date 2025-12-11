@@ -36,6 +36,31 @@ deriv.apply(deriv[25], rules.Disjunction.Intro("right"))
 print(deriv.tree())
 ```
 
+## First-order Quantifiers
+
+First-order rules are available through dedicated `rules.Universal` and `rules.Particular` classes. Just as in standard textbooks, instantiations use a concrete term while generalizations require fresh terms that do not occur elsewhere in the branch.
+
+```python exec="1" result="text" source="material-block"
+from mathesis.grammars import BasicGrammar
+from mathesis.deduction.natural_deduction import NDTree, rules
+
+grammar = BasicGrammar()
+
+premises = grammar.parse(["∀x(P(x)→Q(x))", "∃x P(x)"])
+conclusion = grammar.parse("∃x Q(x)")
+
+deriv = NDTree(premises, conclusion)
+print(deriv.tree())
+
+deriv.apply(deriv[2], rules.Particular.Elim("a"))
+deriv.apply(deriv[5], rules.Universal.Elim("a"))
+deriv.apply(deriv[8], rules.Conditional.Elim())
+deriv.apply(deriv[24], rules.Particular.Intro("a"))
+
+print(deriv.tree())
+print(deriv.tree(style="gentzen"))
+```
+
 ## Render as Gentzen-style Proof
 
 (WIP) Mathesis has an experimental support for rendering a natural deduction proof as a Gentzen-style proof or its LaTeX code.
