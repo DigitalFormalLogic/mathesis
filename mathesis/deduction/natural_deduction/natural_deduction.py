@@ -18,7 +18,9 @@ class NDSequentItem(SequentItem):
 class NDSubproof(NodeMixin):
     derived_by: natural_deduction.rules.Rule | None
 
-    def __init__(self, item: SequentItem, *, parent=None, children=[]) -> None:
+    def __init__(
+        self, item: SequentItem, *, parent=None, children: list[NDSubproof] = []
+    ) -> None:
         super().__init__()
         self.name = item
         self.item = item
@@ -26,6 +28,12 @@ class NDSubproof(NodeMixin):
         self.children = children
 
         self.derived_by = None
+
+    def __str__(self):
+        return f"<NDSubproof name='{str(self.name)}' children={[self.children]}>"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class NDTree:
@@ -41,12 +49,15 @@ class NDTree:
         self.bookkeeper = self._sequent_tree.bookkeeper
         self.counter = self._sequent_tree.counter
 
-        # Proof tree
+        ## Proof tree
+        # Premises have empty child subproof
         for item in self._sequent_tree.root.left:
             item.subproof = NDSubproof(item, children=[])
+        # Conclusion has premises as child subproofs
         self._sequent_tree.root.right[0].subproof = NDSubproof(
             self._sequent_tree.root.right[0],
-            children=[item.subproof for item in self._sequent_tree.root.left],
+            # children=[item.subproof for item in self._sequent_tree.root.left],
+            children=[],
         )
 
     def __getitem__(self, index):

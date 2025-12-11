@@ -9,24 +9,51 @@ from mathesis.deduction.tableau import sign
 
 
 def _apply(target, new_items, counter, preserve_target=True):
+    """Add new items to a sequent, cloning existing items as needed."""
+
     branch_items = new_items
     new_target = None
 
     for item in target.sequent.items:
         if item != target or preserve_target:
             node = item.clone()
+            node.subproof = item.subproof
             node.n = next(counter)
             if item == target:
-                new_target = node
+                pass
             branch_items.append(node)
 
     branch_sequent = Sequent([], [], parent=target.sequent)
     branch_sequent.items = branch_items
 
+    # NOTE: Connect the subproofs
+    branch_sequent.right[0].subproof = target.sequent.right[0].subproof
+
     if preserve_target:
         return branch_sequent, target
     else:
         return branch_sequent
+
+
+def _instantiate_quantifier_body(quantifier, replacing_term: str):
+    subfml = quantifier.sub.clone()
+    subfml = subfml.replace_term(quantifier.variable, replacing_term)
+    return subfml
+
+
+def _collect_branch_terms(sequent):
+    terms = set()
+    current = sequent
+    while current is not None:
+        for item in current.items:
+            terms.update(item.fml.free_terms)
+        current = current.parent
+    return terms
+
+
+def _ensure_fresh_term(term: str, sequent):
+    branch_terms = _collect_branch_terms(sequent)
+    assert term not in branch_terms, "The chosen term already appears in this branch"
 
 
 class Rule:
@@ -264,15 +291,15 @@ class Conjunction:
             elif self.conjunct == "right":
                 item = SequentItem(conj2, sign=sign.POSITIVE, n=next(counter))
 
-            sq1, target = _apply(target, [item], counter)
-            # sq2 = Sequent([target], [item], parent=target.sequent)
-
-            # Subproof
+            # Attach a new subproof node
             item.subproof = NDSubproof(
                 item,
-                children=[target.subproof],
+                children=[deepcopy(target.subproof)],
                 parent=target.sequent.right[0].subproof,
             )
+
+            sq1, target = _apply(target, [item], counter)
+            # sq2 = Sequent([target], [item], parent=target.sequent)
 
             return {
                 "queue_items": [sq1],
@@ -425,56 +452,225 @@ class Conditional:
             assert isinstance(target.fml, forms.Conditional), "Not a conditional"
 
             target.sequent.derived_by = self
-            target.subproof.derived_by = self
 
             antec, conseq = target.fml.subs
 
-            branches = []
-
             antec = SequentItem(antec, sign=sign.NEGATIVE, n=next(counter))
 
-            sequent, _target_antec = _apply(target, [antec], counter)
-            # TODO: This is a unnecesarilly complex way to do this
-            # TODO: Fix dropped numbering
-            new_items = []
-            for item in sequent.items:
-                if item.sign == sign.POSITIVE or item.fml == antec.fml:
-                    new_items.append(item)
-            sequent.items = new_items
+            # antec.subproof = NDSubproof(
+            #     antec,
+            #     children=[],
+            #     parent=target.sequent.right[0].subproof,
+            # )
 
-            if sequent.tautology():
-                antec.subproof = NDSubproof(antec)
-            else:
-                antec.subproof = NDSubproof(
-                    antec, children=deepcopy(target.sequent.right[0].subproof.children)
-                )
-
-            branches.append(sequent)
+            sq1, _target_antec = _apply(target, [antec], counter)
 
             conseq = SequentItem(conseq, sign=sign.POSITIVE, n=next(counter))
-            sequent, _target_conseq = _apply(target, [conseq], counter)
 
-            # NOTE: Connect the subproofs
-            sequent.right[0].subproof = target.sequent.right[0].subproof
-
-            branches.append(sequent)
-
-            new_subproof_antec = antec.subproof
-            new_subproof_conditional = deepcopy(target.subproof)
-
-            new_subproofs = [
-                new_subproof_antec,
-                new_subproof_conditional,
-            ]
-
-            # TODO: Parent must be all right items
+            # Attach a new subproof node
             conseq.subproof = NDSubproof(
                 conseq,
+                children=[],
                 parent=target.sequent.right[0].subproof,
-                children=new_subproofs,
             )
+            conseq.subproof.derived_by = self
+
+            target.subproof.parent = conseq.subproof
+
+            for item in sq1.items:
+                if item.sign == sign.POSITIVE and item.fml == antec.fml:
+                    antec.subproof = item.subproof
+                    break
+
+            antec.subproof.parent = conseq.subproof
+
+            sq2, _target_conseq = _apply(target, [conseq], counter)
+
+            if sq2.tautology():
+                target.sequent.right[0].subproof.children = conseq.subproof.children
+                conseq.subproof.parent = None
+
+            branches = [sq1, sq2]
 
             return {
                 "queue_items": branches,
+                "counter": counter,
+            }
+
+
+class Universal:
+    class Intro(IntroductionRule):
+        label = "∀I"
+        latex_label = r"$\forall$I"
+
+        def __init__(self, generalizing_term: str):
+            self.generalizing_term = generalizing_term
+
+        def apply(self, target: SequentItem, counter=count(1)):
+            assert target.sign == sign.NEGATIVE, "Cannot apply introduction rule"
+            assert isinstance(target.fml, forms.Universal), "Not a universal formula"
+
+            _ensure_fresh_term(self.generalizing_term, target.sequent)
+
+            target.sequent.derived_by = self
+            target.subproof.derived_by = self
+
+            instantiated = _instantiate_quantifier_body(
+                target.fml, self.generalizing_term
+            )
+            instantiated_item = SequentItem(
+                instantiated,
+                sign=sign.NEGATIVE,
+                n=next(counter),
+            )
+            instantiated_item.subproof = NDSubproof(
+                instantiated_item,
+                children=[target.subproof],
+            )
+
+            sequent = _apply(
+                target, [instantiated_item], counter, preserve_target=False
+            )
+
+            # if sequent.tautology():
+            #     left_item = next(
+            #         filter(
+            #             lambda x: str(x.fml) == str(instantiated_item.fml),
+            #             sequent.left,
+            #         ),
+            #         None,
+            #     )
+            #     if left_item is not None:
+            #         instantiated_item.subproof.children = left_item.subproof.children
+
+            # target.subproof.children = [deepcopy(instantiated_item.subproof)]
+
+            return {
+                "queue_items": [sequent],
+                "counter": counter,
+            }
+
+    class Elim(EliminationRule):
+        label = "∀E"
+        latex_label = r"$\forall$E"
+
+        def __init__(self, replacing_term: str):
+            self.replacing_term = replacing_term
+
+        def apply(self, target: SequentItem, counter=count(1)):
+            assert target.sign == sign.POSITIVE, "Cannot apply elimination rule"
+            assert isinstance(target.fml, forms.Universal), "Not a universal formula"
+
+            target.sequent.derived_by = self
+            # target.subproof.derived_by = self
+
+            instantiated = _instantiate_quantifier_body(target.fml, self.replacing_term)
+            instantiated_item = SequentItem(
+                instantiated,
+                sign=sign.POSITIVE,
+                n=next(counter),
+            )
+
+            instantiated_item.subproof = NDSubproof(
+                instantiated_item,
+                children=[target.subproof],
+                parent=target.sequent.right[0].subproof,
+            )
+            instantiated_item.subproof.derived_by = self
+
+            sequent, target = _apply(target, [instantiated_item], counter)
+
+            return {
+                "queue_items": [sequent],
+                "counter": counter,
+            }
+
+
+class Particular:
+    class Intro(IntroductionRule):
+        label = "∃I"
+        latex_label = r"$\exists$I"
+
+        def __init__(self, witness_term: str):
+            self.witness_term = witness_term
+
+        def apply(self, target: SequentItem, counter=count(1)):
+            assert target.sign == sign.NEGATIVE, "Cannot apply introduction rule"
+            assert isinstance(
+                target.fml, forms.Particular
+            ), "Not an existential formula"
+
+            target.sequent.derived_by = self
+            target.subproof.derived_by = self
+
+            instantiated = _instantiate_quantifier_body(target.fml, self.witness_term)
+            instantiated_item = SequentItem(
+                instantiated,
+                sign=sign.NEGATIVE,
+                n=next(counter),
+            )
+            instantiated_item.subproof = NDSubproof(
+                instantiated_item,
+                children=[target.subproof],
+            )
+
+            sequent = _apply(
+                target, [instantiated_item], counter, preserve_target=False
+            )
+
+            # if sequent.tautology():
+            #     left_item = next(
+            #         filter(
+            #             lambda x: str(x.fml) == str(instantiated_item.fml),
+            #             sequent.left,
+            #         ),
+            #         None,
+            #     )
+            #     if left_item is not None:
+            #         instantiated_item.subproof.children = left_item.subproof.children
+
+            return {
+                "queue_items": [sequent],
+                "counter": counter,
+            }
+
+    class Elim(EliminationRule):
+        label = "∃E"
+        latex_label = r"$\exists$E"
+
+        def __init__(self, generalizing_term: str):
+            self.generalizing_term = generalizing_term
+
+        def apply(self, target: SequentItem, counter=count(1)):
+            assert target.sign == sign.POSITIVE, "Cannot apply elimination rule"
+            assert isinstance(
+                target.fml, forms.Particular
+            ), "Not an existential formula"
+
+            _ensure_fresh_term(self.generalizing_term, target.sequent)
+
+            target.sequent.derived_by = self
+            # target.subproof.derived_by = self
+
+            instantiated = _instantiate_quantifier_body(
+                target.fml, self.generalizing_term
+            )
+            instantiated_item = SequentItem(
+                instantiated,
+                sign=sign.POSITIVE,
+                n=next(counter),
+            )
+
+            instantiated_item.subproof = NDSubproof(
+                instantiated_item,
+                children=[target.subproof],
+                parent=target.sequent.right[0].subproof,
+            )
+            instantiated_item.subproof.derived_by = self
+
+            sq, target = _apply(target, [instantiated_item], counter)
+
+            return {
+                "queue_items": [sq],
                 "counter": counter,
             }
