@@ -26,7 +26,7 @@ print(deriv.tree())
 deriv.apply(deriv[1], rules.Disjunction.Elim())
 print(deriv.tree())
 
-deriv.apply(deriv[7], rules.Disjunction.Intro("left"))
+deriv.apply(deriv[8], rules.Disjunction.Intro("left"))
 print(deriv.tree())
 
 deriv.apply(deriv[10], rules.Conditional.Elim())
@@ -77,7 +77,7 @@ deriv = NDTree(premises, conclusion)
 print(deriv.tree(number=False))
 
 deriv.apply(deriv[1], rules.Disjunction.Elim())
-deriv.apply(deriv[7], rules.Disjunction.Intro("left"))
+deriv.apply(deriv[8], rules.Disjunction.Intro("left"))
 deriv.apply(deriv[10], rules.Conditional.Elim())
 deriv.apply(deriv[25], rules.Disjunction.Intro("right"))
 

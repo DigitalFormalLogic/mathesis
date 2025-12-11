@@ -77,6 +77,10 @@ class NDTree:
 
         return self
 
+    def is_valid(self):
+        root = self._sequent_tree.root
+        return all(leaf.tautology() for leaf in root.leaves)
+
     def tree(self, style=None, number=True):
         if style == "gentzen":
             output = ""
@@ -135,6 +139,6 @@ class NDTree:
 
         rec_output = rec(root)
 
-        output = f"#proof-tree(\n{rec_output}\n)"
+        output = f"#prooftree(\n{rec_output}\n)"
 
         return output

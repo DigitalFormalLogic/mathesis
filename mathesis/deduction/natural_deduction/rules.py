@@ -12,7 +12,6 @@ def _apply(target, new_items, counter, preserve_target=True):
     """Add new items to a sequent, cloning existing items as needed."""
 
     branch_items = new_items
-    new_target = None
 
     for item in target.sequent.items:
         if item != target or preserve_target:
@@ -29,8 +28,11 @@ def _apply(target, new_items, counter, preserve_target=True):
     # NOTE: Connect the subproofs
     branch_sequent.right[0].subproof = target.sequent.right[0].subproof
 
+    target_new = deepcopy(target)
+    target_new.sequent = branch_sequent
+
     if preserve_target:
-        return branch_sequent, target
+        return branch_sequent, target_new
     else:
         return branch_sequent
 
@@ -367,27 +369,35 @@ class Disjunction:
             assert isinstance(target.fml, forms.Disjunction), "Not a disjunction"
 
             target.sequent.derived_by = self
-            target.subproof.derived_by = self
+            target.sequent.right[0].subproof.derived_by = self
 
             branches = []
+            items = []
 
             for disj in target.fml.subs:
                 disj = SequentItem(disj, sign=sign.POSITIVE, n=next(counter))
-                sequent, _target = _apply(target, [disj], counter)
-                branches.append(sequent)
-
-            # Subproof
-            for branch in branches:
-                for left_item in branch.left:
-                    if getattr(left_item, "subproof", None) is None:
-                        left_item.subproof = NDSubproof(left_item)
-
-                branch.right[0].subproof = NDSubproof(
-                    branch.right[0],
-                    # parent=target.sequent.right[0].subproof,
-                    parent=target.subproof,
-                    children=[deepcopy(item.subproof) for item in branch.left],
+                disj.subproof = NDSubproof(
+                    disj,
+                    children=[],
+                    parent=None,
                 )
+                items.append(disj)
+
+            for item in items:
+                sequent, _target = _apply(target, [item], counter)
+
+                # for left_item in branch.left:
+                #     if getattr(left_item, "subproof", None) is None:
+                #         left_item.subproof = NDSubproof(left_item)
+
+                sequent.right[0].subproof = NDSubproof(
+                    sequent.right[0],
+                    # parent=target.sequent.right[0].subproof,
+                    parent=target.sequent.right[0].subproof,
+                    children=[],
+                )
+
+                branches.append(sequent)
 
             target.sequent.right[0].subproof.children = [
                 branch.right[0].subproof for branch in branches
@@ -463,19 +473,33 @@ class Conditional:
             #     parent=target.sequent.right[0].subproof,
             # )
 
-            sq1, _target_antec = _apply(target, [antec], counter)
+            # sq1, target_new = _apply(target.sequent.right[0], [], counter)
+            sq1, _target = _apply(target, [antec], counter)
 
             conseq = SequentItem(conseq, sign=sign.POSITIVE, n=next(counter))
+
+            # Limit to single conclusion = antecedent
+            sq1.items = [item for item in sq1.items if item.sign == sign.POSITIVE or item == antec]
 
             # Attach a new subproof node
             conseq.subproof = NDSubproof(
                 conseq,
-                children=[],
+                children=[deepcopy(target.subproof)],
                 parent=target.sequent.right[0].subproof,
             )
             conseq.subproof.derived_by = self
 
-            target.subproof.parent = conseq.subproof
+            # Invalidate if conseq does not target.sequent.right[0]
+            # if str(conseq.fml) != str(target.sequent.right[0].fml):
+            #     raise AssertionError("Consequent does not match target sequent conclusion")
+
+            # target.subproof.parent = conseq.subproof
+
+            antec.subproof = NDSubproof(
+                antec,
+                children=[],
+                parent=None,
+            )
 
             for item in sq1.items:
                 if item.sign == sign.POSITIVE and item.fml == antec.fml:
