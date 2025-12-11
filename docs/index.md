@@ -53,7 +53,7 @@ pip install mathesis
 
 |   | Model | Tableau | Natural Deduction | Sequent Calculus |
 |---:|:---:|:---:|:---:|:---:|
-| Classical logic | ✅ | ✅ | - | - |
+| Classical logic | ✅ | ✅ | ✅ | - |
 
 #### In Progress
 
