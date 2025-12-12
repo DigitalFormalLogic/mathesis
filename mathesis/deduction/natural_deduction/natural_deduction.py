@@ -114,7 +114,11 @@ class NDTree:
                 tmpl = r"\BinaryInfC{{${}$}}"
             elif len(node.children) == 3:
                 tmpl = r"\TrinaryInfC{{${}$}}"
-            output += label_part + tmpl.format(node.name.fml.latex()) + "\n"
+
+            fml = str(node.name.fml.latex())
+            if hasattr(node, "hyp") and node.hyp:
+                fml = f"[{fml}]"
+            output += label_part + tmpl.format(fml) + "\n"
 
         return """\\begin{{prooftree}}\n{}\\end{{prooftree}}""".format(output)
 
