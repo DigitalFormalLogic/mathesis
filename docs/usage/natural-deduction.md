@@ -36,7 +36,7 @@ deriv.apply(deriv[25], rules.Disjunction.Intro("right"))
 print(deriv.tree())
 ```
 
-## First-order Quantifiers
+## First-order logic
 
 First-order rules are available through dedicated `rules.Universal` and `rules.Particular` classes. Just as in standard textbooks, instantiations use a concrete term while generalizations require fresh terms that do not occur elsewhere in the branch.
 
@@ -61,7 +61,7 @@ print(deriv.tree())
 print(deriv.tree(style="gentzen"))
 ```
 
-## Render as Gentzen-style Proof
+## Render as Gentzen-style proof
 
 (WIP) Mathesis has an experimental support for rendering a natural deduction proof as a Gentzen-style proof or its LaTeX code.
 
@@ -103,14 +103,14 @@ $$
 \end{prooftree}
 $$
 
-## Render as Fitch-style Proof
+## Render as Fitch-style proof
 
 WIP
 
-## Render as Suppes-Lemmon-style Proof
+## Render as Suppes-Lemmon-style proof
 
 WIP
 
-## Render as Sequent Calculus Proof
+## Render as Sequent Calculus proof
 
 WIP
