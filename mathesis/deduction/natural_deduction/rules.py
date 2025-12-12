@@ -15,6 +15,8 @@ def _apply(target, new_items, counter, preserve_target=True):
 
     for item in target.sequent.items:
         if item != target or preserve_target:
+            if not hasattr(item, "subproof"):
+                item.subproof = NDSubproof(item)
             node = item.clone()
             node.subproof = item.subproof
             node.n = next(counter)
@@ -175,40 +177,61 @@ class Negation:
 
             target.sequent.derived_by = self
 
-            # NOTE: Negation elimination requires a falsum in right
-            falsum = next(
-                filter(lambda x: str(x.fml) == "⊥", target.sequent.right),
-                None,
-            )
-            assert falsum, "`⊥` must be in conclusions"
+            # # NOTE: Negation elimination requires a falsum in right
+            # falsum = next(
+            #     filter(lambda x: str(x.fml) == "⊥", target.sequent.right),
+            #     None,
+            # )
+            # assert falsum, "`⊥` must be in conclusions"
 
             # NOTE: If you want to eliminate negation, you need to have its subformula
             subfml = target.fml.sub
 
-            subfml = SequentItem(subfml, sign=sign.NEGATIVE, n=next(counter))
-            sequent = _apply(target, [subfml], counter, preserve_target=False)
+            # Find on the left side
+            print(subfml)
+            nonneg_item = next(
+                filter(
+                    lambda x: str(x.fml) == str(subfml),
+                    target.sequent.left,
+                ),
+                None,
+            )
+            assert nonneg_item, "Subformula must be in premises"
+            nonneg_item = nonneg_item.clone()
 
-            subfml = sequent.right[0]
-            # subfml.subproof = NDSubproof(subfml)
+            falsum = forms.Atom("⊥", latex=r"\bot")
+            falsum_item = SequentItem(
+                falsum,
+                sign=sign.POSITIVE,
+                n=next(counter),
+            )
 
-            # Look up falsum
-            falsum = next(
+            # Look up falsum on the right side
+            falsum_right = next(
                 filter(lambda x: str(x.fml) == "⊥", target.sequent.right),
                 None,
             )
 
-            # falsum.subproof.children = [
-            #     subfml.subproof,
-            #     target.subproof,
-            # ]
+            if falsum_right is not None:
+                falsum_item.subproof = falsum_right.subproof
+                falsum_item.subproof.children = [
+                    deepcopy(nonneg_item.subproof),
+                    deepcopy(target.subproof),
+                ]
+            else:
+                falsum_item.subproof = NDSubproof(
+                    falsum_item,
+                    children=[
+                        deepcopy(nonneg_item.subproof),
+                        deepcopy(target.subproof),
+                    ],
+                    parent=target.sequent.right[0].subproof,
+                )
 
-            # new_falsum = next(
-            #     filter(lambda x: str(x.fml) == "⊥", sequent.right),
-            #     None,
-            # )
+            falsum_item.subproof.derived_by = self
 
-            # new_falsum.subproof = falsum.subproof
-            falsum.subproof.derived_by = self
+            # subfml = SequentItem(subfml, sign=sign.NEGATIVE, n=next(counter))
+            sequent, _target = _apply(target, [falsum_item], counter)
 
             return {
                 "queue_items": [sequent],
@@ -392,10 +415,10 @@ class Disjunction:
 
                 sequent.right[0].subproof = NDSubproof(
                     sequent.right[0],
-                    # parent=target.sequent.right[0].subproof,
                     parent=target.sequent.right[0].subproof,
                     children=[],
                 )
+                sequent.right[0].subproof.hyp = True
 
                 branches.append(sequent)
 
@@ -479,7 +502,11 @@ class Conditional:
             conseq = SequentItem(conseq, sign=sign.POSITIVE, n=next(counter))
 
             # Limit to single conclusion = antecedent
-            sq1.items = [item for item in sq1.items if item.sign == sign.POSITIVE or item == antec]
+            sq1.items = [
+                item
+                for item in sq1.items
+                if item.sign == sign.POSITIVE or item == antec
+            ]
 
             # Attach a new subproof node
             conseq.subproof = NDSubproof(
@@ -675,7 +702,7 @@ class Particular:
             _ensure_fresh_term(self.generalizing_term, target.sequent)
 
             target.sequent.derived_by = self
-            # target.subproof.derived_by = self
+            target.sequent.right[0].subproof.derived_by = self
 
             instantiated = _instantiate_quantifier_body(
                 target.fml, self.generalizing_term
@@ -686,14 +713,13 @@ class Particular:
                 n=next(counter),
             )
 
-            instantiated_item.subproof = NDSubproof(
-                instantiated_item,
-                children=[target.subproof],
-                parent=target.sequent.right[0].subproof,
-            )
-            instantiated_item.subproof.derived_by = self
-
             sq, target = _apply(target, [instantiated_item], counter)
+
+            sq.right[0].subproof = NDSubproof(
+                sq.right[0],
+                parent=target.sequent.right[0].subproof,
+                children=[],
+            )
 
             return {
                 "queue_items": [sq],
