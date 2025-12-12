@@ -148,7 +148,7 @@ class Negation:
             # Attach a subproof to the consequent (falsum)
             conseq.subproof = NDSubproof(
                 conseq,
-                children=[deepcopy(node.subproof) for node in target.sequent.left],
+                children=[],
             )
             target.sequent.right[0].subproof.children = [conseq.subproof]
             antec.subproof = NDSubproof(
@@ -174,7 +174,6 @@ class Negation:
             assert isinstance(target.fml, forms.Negation), "Not a negation"
 
             target.sequent.derived_by = self
-            target.subproof.derived_by = self
 
             # NOTE: Negation elimination requires a falsum in right
             falsum = next(
@@ -190,7 +189,7 @@ class Negation:
             sequent = _apply(target, [subfml], counter, preserve_target=False)
 
             subfml = sequent.right[0]
-            subfml.subproof = NDSubproof(subfml)
+            # subfml.subproof = NDSubproof(subfml)
 
             # Look up falsum
             falsum = next(
@@ -198,17 +197,18 @@ class Negation:
                 None,
             )
 
-            falsum.subproof.children = [
-                subfml.subproof,
-                target.subproof,
-            ]
+            # falsum.subproof.children = [
+            #     subfml.subproof,
+            #     target.subproof,
+            # ]
 
-            new_falsum = next(
-                filter(lambda x: str(x.fml) == "⊥", sequent.right),
-                None,
-            )
+            # new_falsum = next(
+            #     filter(lambda x: str(x.fml) == "⊥", sequent.right),
+            #     None,
+            # )
 
-            new_falsum.subproof = falsum.subproof
+            # new_falsum.subproof = falsum.subproof
+            falsum.subproof.derived_by = self
 
             return {
                 "queue_items": [sequent],
@@ -512,6 +512,7 @@ class Conditional:
 
             if sq2.tautology():
                 target.sequent.right[0].subproof.children = conseq.subproof.children
+                target.sequent.right[0].subproof.derived_by = self
                 conseq.subproof.parent = None
 
             branches = [sq1, sq2]
