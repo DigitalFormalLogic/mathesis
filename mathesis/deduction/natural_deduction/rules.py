@@ -404,6 +404,7 @@ class Disjunction:
                     children=[],
                     parent=None,
                 )
+                disj.subproof.hyp = True
                 items.append(disj)
 
             for item in items:
@@ -418,7 +419,6 @@ class Disjunction:
                     parent=target.sequent.right[0].subproof,
                     children=[],
                 )
-                sequent.right[0].subproof.hyp = True
 
                 branches.append(sequent)
 
@@ -509,6 +509,7 @@ class Conditional:
             ]
 
             # Attach a new subproof node
+            target.subproof.parent = None
             conseq.subproof = NDSubproof(
                 conseq,
                 children=[deepcopy(target.subproof)],
@@ -663,23 +664,24 @@ class Particular:
             )
             instantiated_item.subproof = NDSubproof(
                 instantiated_item,
-                children=[target.subproof],
+                children=target.subproof.children,
+                parent=target.subproof,
             )
 
             sequent = _apply(
                 target, [instantiated_item], counter, preserve_target=False
             )
 
-            # if sequent.tautology():
-            #     left_item = next(
-            #         filter(
-            #             lambda x: str(x.fml) == str(instantiated_item.fml),
-            #             sequent.left,
-            #         ),
-            #         None,
-            #     )
-            #     if left_item is not None:
-            #         instantiated_item.subproof.children = left_item.subproof.children
+            if sequent.tautology():
+                left_item = next(
+                    filter(
+                        lambda x: str(x.fml) == str(instantiated_item.fml),
+                        sequent.left,
+                    ),
+                    None,
+                )
+                if left_item is not None:
+                    instantiated_item.subproof.children = left_item.subproof.children
 
             return {
                 "queue_items": [sequent],
@@ -712,6 +714,12 @@ class Particular:
                 sign=sign.POSITIVE,
                 n=next(counter),
             )
+            instantiated_item.subproof = NDSubproof(
+                instantiated_item,
+            )
+            instantiated_item.subproof.hyp = True
+
+            target.subproof.parent = target.sequent.right[0].subproof
 
             sq, target = _apply(target, [instantiated_item], counter)
 
