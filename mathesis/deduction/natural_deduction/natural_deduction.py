@@ -86,11 +86,12 @@ class NDTree:
             output = ""
             root = self._sequent_tree.root.right[0].subproof
             for pre, fill, node in RenderTree(root):
-                output += "{}{}{}\n".format(
+                output += "{}{}{}{}\n".format(
                     pre,
                     f"[{node.name}]" if getattr(node, "marked", False) else node.name,
                     # self.proof_tree.mapping[node].n,
                     " ×" if getattr(node, "marked", False) else "",
+                    f" [{node.derived_by}]" if node.derived_by is not None else "",
                 )
             return output
         else:
