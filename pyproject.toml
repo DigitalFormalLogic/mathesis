@@ -1,6 +1,6 @@
 [project]
 name = "mathesis"
-version = "0.7.1"
+version = "0.7.2"
 description = "Formal logic library in Python for humans"
 authors = [
     {name = "Kentaro Ozeki", email = "32771324+ozekik@users.noreply.github.com"}
