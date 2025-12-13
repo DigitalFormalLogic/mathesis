@@ -188,7 +188,6 @@ class Negation:
             subfml = target.fml.sub
 
             # Find on the left side
-            print(subfml)
             nonneg_item = next(
                 filter(
                     lambda x: str(x.fml) == str(subfml),
@@ -455,16 +454,17 @@ class Conditional:
                 n=next(counter),
             )
 
+            sq = _apply(target, [antec, conseq], counter, preserve_target=False)
+
             conseq.subproof = NDSubproof(
                 conseq,
+                parent=target.subproof,
             )
             antec.subproof = NDSubproof(
                 antec,
-                parent=conseq.subproof,
+                # parent=conseq.subproof,
             )
             antec.subproof.hyp = True
-
-            sq = _apply(target, [antec, conseq], counter, preserve_target=False)
 
             if sq.tautology():
                 left_item = next(
@@ -586,27 +586,16 @@ class Universal:
                 sign=sign.NEGATIVE,
                 n=next(counter),
             )
-            instantiated_item.subproof = NDSubproof(
-                instantiated_item,
-                children=[target.subproof],
-            )
 
             sequent = _apply(
                 target, [instantiated_item], counter, preserve_target=False
             )
 
-            # if sequent.tautology():
-            #     left_item = next(
-            #         filter(
-            #             lambda x: str(x.fml) == str(instantiated_item.fml),
-            #             sequent.left,
-            #         ),
-            #         None,
-            #     )
-            #     if left_item is not None:
-            #         instantiated_item.subproof.children = left_item.subproof.children
-
-            # target.subproof.children = [deepcopy(instantiated_item.subproof)]
+            instantiated_item.subproof = NDSubproof(
+                instantiated_item,
+                children=[],
+                parent=target.subproof,
+            )
 
             return {
                 "queue_items": [sequent],
@@ -634,14 +623,14 @@ class Universal:
                 n=next(counter),
             )
 
+            sequent, target = _apply(target, [instantiated_item], counter)
+
             instantiated_item.subproof = NDSubproof(
                 instantiated_item,
                 children=[target.subproof],
                 parent=target.sequent.right[0].subproof,
             )
             instantiated_item.subproof.derived_by = self
-
-            sequent, target = _apply(target, [instantiated_item], counter)
 
             return {
                 "queue_items": [sequent],
