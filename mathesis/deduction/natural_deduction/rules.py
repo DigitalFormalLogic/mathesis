@@ -454,19 +454,29 @@ class Conditional:
                 sign=sign.NEGATIVE,
                 n=next(counter),
             )
-            sq = _apply(target, [antec, conseq], counter, preserve_target=False)
 
-            # Subproof
             conseq.subproof = NDSubproof(
                 conseq,
-                children=[deepcopy(node.subproof) for node in target.sequent.left],
             )
-            target.sequent.right[0].subproof.children = [conseq.subproof]
             antec.subproof = NDSubproof(
                 antec,
                 parent=conseq.subproof,
-                children=[],
             )
+            antec.subproof.hyp = True
+
+            sq = _apply(target, [antec, conseq], counter, preserve_target=False)
+
+            if sq.tautology():
+                left_item = next(
+                    filter(
+                        lambda x: str(x.fml) == str(conseq.fml),
+                        sq.left,
+                    ),
+                    None,
+                )
+                # target.sequent.right[0].subproof.children = left_item.subproof.children
+                left_item.subproof.parent = target.sequent.right[0].subproof
+                conseq.subproof.parent = None
 
             return {
                 "queue_items": [sq],
@@ -681,7 +691,8 @@ class Particular:
                     None,
                 )
                 if left_item is not None:
-                    instantiated_item.subproof.children = left_item.subproof.children
+                    # instantiated_item.subproof.parent = None
+                    target.subproof.children = [left_item.subproof]
 
             return {
                 "queue_items": [sequent],
