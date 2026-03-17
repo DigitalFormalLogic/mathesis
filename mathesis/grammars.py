@@ -12,6 +12,8 @@ from mathesis.forms import (
     Conjunction,
     Disjunction,
     Negation,
+    Possibility,
+    Necessity,
     Particular,
     Universal,
 )
@@ -32,6 +34,12 @@ class ToFml(Transformer):
 
     def negation(self, v):
         return Negation(*v)
+    
+    def possibility(self, v):
+        return Possibility(*v)
+    
+    def necessity(self, v):
+        return Necessity(*v)
 
     def universal(self, v):
         return Universal(*v)
@@ -90,11 +98,24 @@ class Grammar(ABC):
 class BasicPropositionalGrammar(Grammar):
     """Basic grammar for the propositional language."""
 
+    default_symbols = {
+        "top": "⊤",
+        "bottom": "⊥",
+        "negation": "¬",
+        "conjunction": "∧",
+        "disjunction": "∨",
+        "conditional": "→",
+        "necessity": "□",
+        "possibility": "◇",
+    }
+
     grammar_rules = r"""
 ?fml: conditional
     | disjunction
     | conjunction
     | negation
+    | necessity
+    | possibility
     | top
     | bottom
     | atom
@@ -103,34 +124,44 @@ class BasicPropositionalGrammar(Grammar):
 ATOM : /\w+/
 
 atom : ATOM
-top : "⊤"
-bottom : "⊥"
-negation : "¬" fml
-conjunction : (conjunction | fml) "∧" fml
-disjunction : (disjunction | fml) "∨" fml
-conditional : fml "{conditional_symbol}" fml
-necc : "□" fml
-poss : "◇" fml
+top : "{top}"
+bottom : "{bottom}"
+negation : "{negation}" fml
+conjunction : (conjunction | fml) "{conjunction}" fml
+disjunction : (disjunction | fml) "{disjunction}" fml
+conditional : fml "{conditional}" fml
+necessity : "{necessity}" fml
+possibility : "{possibility}" fml
 
 %import common.WS
 %ignore WS
 """.lstrip()
 
-    def __init__(self, symbols={"conditional": "→"}):
-        self.grammar_rules = self.grammar_rules.format(
-            conditional_symbol=symbols["conditional"]
-        )
+    def __init__(self, symbols=None):
+        merged = self.default_symbols.copy()
+        if symbols is not None:
+            merged.update(symbols)
+        self.symbols = merged
+        self.grammar_rules = self.grammar_rules.format(**merged)
         super().__init__()
 
 
 class BasicGrammar(BasicPropositionalGrammar):
     """Basic grammar for the first-order language."""
 
+    default_symbols = {
+        **BasicPropositionalGrammar.default_symbols,
+        "universal": "∀",
+        "particular": "∃",
+    }
+
     grammar_rules = r"""
 ?fml: conditional
     | disjunction
     | conjunction
     | negation
+    | necessity
+    | possibility
     | universal
     | particular
     | top
@@ -142,16 +173,16 @@ PREDICATE: /\w+/
 TERM: /\w+/
 
 atom : PREDICATE ("(" TERM ("," TERM)* ")")?
-top : "⊤"
-bottom : "⊥"
-negation : "¬" fml
-conjunction : fml "∧" fml
-disjunction : fml "∨" fml
-conditional : fml "{conditional_symbol}" fml
-necc : "□" fml
-poss : "◇" fml
-universal : "∀" TERM fml
-particular : "∃" TERM fml
+top : "{top}"
+bottom : "{bottom}"
+negation : "{negation}" fml
+conjunction : fml "{conjunction}" fml
+disjunction : fml "{disjunction}" fml
+conditional : fml "{conditional}" fml
+necessity : "{necessity}" fml
+possibility : "{possibility}" fml
+universal : "{universal}" TERM fml
+particular : "{particular}" TERM fml
 
 %import common.WS
 %ignore WS
