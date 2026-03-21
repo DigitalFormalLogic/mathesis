@@ -187,6 +187,16 @@ class Negation(Unary):
     connective = "¬"
     connective_latex = r"\neg"
 
+class Possibility(Unary):
+    signature = "Poss"
+    connective = "◇"
+    connective_latex = r"\Diamond"
+
+class Necessity(Unary):
+    signature = "Necc"
+    connective = "□"
+    connective_latex = r"\Box"
+
 
 class Binary(Formula):
     subs: tuple[Formula, Formula]
